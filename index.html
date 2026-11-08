@@ -128,6 +128,18 @@
   }
 
   /* ---------- Carte géographique ---------- */
+  .toggle {
+    position: absolute; top: 14px; right: 14px; width: 30px; height: 30px; border-radius: 50%;
+    font: inherit; font-size: 1.2rem; line-height: 1; color: var(--texte);
+    background: var(--carte); border: 1px solid var(--bord); cursor: pointer;
+  }
+  .toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .pliable h2 { cursor: pointer; padding-right: 44px; }
+  .pliable.replie { padding-top: 14px; padding-bottom: 14px; background: var(--accent-fond); }   /* réduite : une simple bande */
+  .pliable.replie h2 { margin-bottom: 0; }
+  .pliable.replie .toggle { top: 11px; }
+  .pliable.replie .corps { display: none; }
   #carte-leaflet { height: 320px; border-radius: 8px; isolation: isolate; }
   .note { margin: 8px 0 0; font-size: 0.8rem; color: var(--doux); }
 
@@ -191,12 +203,6 @@
     <div class="valeurs" id="moyennes"></div>
   </section>
 
-  <section class="carte" id="carte-geo">
-    <h2>Position <span>et qualité de l'air</span></h2>
-    <div id="carte-leaflet"></div>
-    <p class="note" id="note-carte"></p>
-  </section>
-
   <section class="carte" id="carte-pm">
     <h2>Particules <span>µg/m³</span></h2>
     <div class="graphe"><canvas id="graphe-pm"></canvas></div>
@@ -216,6 +222,15 @@
   <section class="carte" id="carte-co2">
     <h2>CO₂ <span>ppm</span></h2>
     <div class="graphe"><canvas id="graphe-co2"></canvas></div>
+  </section>
+
+  <section class="carte pliable" id="carte-geo">
+    <button type="button" class="toggle" id="toggle-carte" aria-expanded="true" aria-controls="corps-carte" title="Réduire">−</button>
+    <h2>Position <span>et qualité de l'air</span></h2>
+    <div class="corps" id="corps-carte">
+      <div id="carte-leaflet"></div>
+      <p class="note" id="note-carte"></p>
+    </div>
   </section>
 </main>
 
@@ -544,7 +559,7 @@ function dessinerCarte(points) {
   });
   if (gps.length > 1) L.polyline(coords, { color: "#5b6b77", weight: 2, opacity: 0.6 }).addTo(couchePoints);
   laCarte.invalidateSize();
-  if (recadrer) {                                              // on ne recadre pas à chaque rafraîchissement (zoom de l'utilisateur)
+  if (recadrer && document.getElementById("carte-leaflet").offsetWidth > 0) {                                              // on ne recadre pas à chaque rafraîchissement (zoom de l'utilisateur)
     coords.length > 1 ? laCarte.fitBounds(coords, { padding: [30, 30], maxZoom: 17 }) : laCarte.setView(coords[0], 15);
     recadrer = false;
   }
@@ -671,6 +686,18 @@ document.getElementById("theme").addEventListener("click", () => {
   if (dernierPoints.length) afficher(dernierPoints);   // redessiner avec les nouvelles couleurs
 });
 majBoutonTheme();
+
+// Carte réductible : "−" la réduit à une bande avec son titre, "+" la rouvre
+const sectionCarte = document.getElementById("carte-geo"), boutonCarte = document.getElementById("toggle-carte");
+function basculerCarte() {
+  const replie = sectionCarte.classList.toggle("replie");
+  boutonCarte.textContent = replie ? "+" : "−";
+  boutonCarte.title = replie ? "Agrandir" : "Réduire";
+  boutonCarte.setAttribute("aria-expanded", String(!replie));
+  if (!replie && dernierPoints.length) dessinerCarte(dernierPoints);   // Leaflet doit recalculer sa taille
+}
+boutonCarte.addEventListener("click", basculerCarte);
+sectionCarte.querySelector("h2").addEventListener("click", basculerCarte);
 
 rafraichir();
 setInterval(rafraichir, 2 * 60 * 1000);   // mise à jour toutes les 2 minutes
