@@ -4,74 +4,204 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Notre capteur</title>
+<!-- Police : si pas de réseau, le navigateur prend la police système -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <!-- Chart.js : la bibliothèque qui dessine les graphes, chargée depuis un CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
+  :root {
+    --fond: #eef2f4;
+    --carte: #ffffff;
+    --bord: #d7e0e5;
+    --texte: #14212b;
+    --doux: #5b6b77;
+    --accent: #0b6e8a;
+    --accent-fond: #dcedf3;
+    --grille: #e3eaee;
+    --erreur: #b3261e;
+    --ok: #2e9e6b;
+    --c1: #0b6e8a;   /* courbe 1 */
+    --c2: #e0a100;   /* courbe 2 */
+    --c3: #7a4fd1;   /* courbe 3 */
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fond: #0f1a21;
+      --carte: #17252e;
+      --bord: #28394380;
+      --texte: #e8f0f4;
+      --doux: #93a6b2;
+      --accent: #5cc3df;
+      --accent-fond: #1d3a46;
+      --grille: #243640;
+      --erreur: #ff8a80;
+      --ok: #55d198;
+      --c1: #5cc3df;
+      --c2: #f2c14e;
+      --c3: #b79bff;
+    }
+  }
+ 
+  * { box-sizing: border-box; }
   body {
-    font-family: system-ui, sans-serif; color: #1b2420; background: #f6f7f6;
-    max-width: 900px; margin: 0 auto; padding: 16px;
+    margin: 0; padding: 24px 16px 48px;
+    font-family: "DM Sans", system-ui, sans-serif;
+    color: var(--texte); background: var(--fond);
+    line-height: 1.5;
   }
-  h1 { margin-bottom: 4px; }
+  main { max-width: 960px; margin: 0 auto; }
+ 
+  /* ---------- En-tête ---------- */
+  header {
+    display: flex; flex-wrap: wrap; align-items: flex-end;
+    justify-content: space-between; gap: 16px; margin-bottom: 20px;
+  }
+  h1 { margin: 0; font-size: 2rem; letter-spacing: -0.02em; }
+  header p { margin: 4px 0 0; color: var(--doux); }
+ 
+  .periodes {
+    display: inline-flex; padding: 4px; gap: 4px;
+    background: var(--carte); border: 1px solid var(--bord); border-radius: 999px;
+  }
+  .periodes button {
+    font: inherit; font-size: 0.9rem; color: var(--doux);
+    background: none; border: 0; border-radius: 999px;
+    padding: 6px 14px; cursor: pointer;
+  }
+  .periodes button:hover { color: var(--texte); }
+  .periodes button[aria-pressed="true"] {
+    background: var(--accent-fond); color: var(--accent); font-weight: 700;
+  }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+ 
+  /* ---------- Statut ---------- */
+  #etat {
+    display: flex; align-items: center; gap: 8px;
+    margin: 0 0 20px; font-size: 0.9rem; color: var(--doux);
+  }
+  #etat::before {
+    content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--doux);
+  }
+  #etat.ok::before { background: var(--ok); }
+  #etat.erreur { color: var(--erreur); }
+  #etat.erreur::before { background: var(--erreur); }
+ 
+  /* ---------- Dernière mesure ---------- */
   .carte {
-    background: #fff; border: 1px solid #d6ddd8; border-radius: 8px;
-    padding: 12px 16px; margin: 16px 0;
+    background: var(--carte); border: 1px solid var(--bord);
+    border-radius: 12px; padding: 18px 20px; margin-bottom: 16px;
   }
-  #valeurs { display: flex; flex-wrap: wrap; gap: 24px; }
-  .valeur b { display: block; font-size: 1.8rem; }
-  #etat { color: #5a6a60; }
-  #etat.erreur { color: #b3261e; }
+  .carte h2 { margin: 0 0 12px; font-size: 1.05rem; font-weight: 700; }
+  .carte h2 span { color: var(--doux); font-weight: 400; }
+ 
+  #qualite {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--bord);
+  }
+  #qualite[hidden] { display: none; }
+  #pastille { width: 14px; height: 14px; border-radius: 50%; background: var(--doux); flex: none; }
+  #qualite-texte { font-size: 1.15rem; font-weight: 700; }
+  #qualite small { display: block; color: var(--doux); font-weight: 400; font-size: 0.8rem; }
+ 
+  #valeurs {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  }
+  .valeur { padding: 10px 12px; border-radius: 8px; background: var(--fond); }
+  .valeur .nom { font-size: 0.85rem; color: var(--doux); }
+  .valeur b {
+    display: block; font-size: 1.7rem; line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+  }
+  .valeur b small { font-size: 0.8rem; font-weight: 400; color: var(--doux); margin-left: 2px; }
+ 
+  /* ---------- Graphes ---------- */
+  .graphe { position: relative; height: 280px; }
+  [hidden] { display: none !important; }
+ 
+  @media (max-width: 520px) {
+    h1 { font-size: 1.6rem; }
+    .graphe { height: 240px; }
+  }
 </style>
 </head>
 <body>
-
-<h1>Notre capteur</h1>
-<p>Mesures envoyées par la carte du groupe au serveur AirCarto.</p>
-
-<p>
-  Période :
-  <select id="periode">
-    <option value="-6h">6 dernières heures</option>
-    <option value="-24h" selected>24 dernières heures</option>
-    <option value="-7d">7 derniers jours</option>
-  </select>
-</p>
-<p id="etat">Chargement…</p>
-
-<div class="carte">
+<main>
+ 
+<header>
+  <div>
+    <h1>Notre capteur</h1>
+    <p>Mesures envoyées par la carte du groupe au serveur AirCarto.</p>
+  </div>
+  <div class="periodes" id="periodes" role="group" aria-label="Période affichée">
+    <button type="button" data-periode="-6h" aria-pressed="false">6 h</button>
+    <button type="button" data-periode="-24h" aria-pressed="true">24 h</button>
+    <button type="button" data-periode="-7d" aria-pressed="false">7 jours</button>
+  </div>
+</header>
+ 
+<p id="etat" role="status">Chargement…</p>
+ 
+<section class="carte">
   <h2>Dernière mesure</h2>
+  <div id="qualite" hidden>
+    <span id="pastille"></span>
+    <div id="qualite-texte"></div>
+  </div>
   <div id="valeurs"></div>
-</div>
-
-<div class="carte">
-  <h2>Particules (µg/m³)</h2>
-  <canvas id="graphe-pm"></canvas>
-</div>
-<div class="carte">
-  <h2>Température (°C) et humidité (%)</h2>
-  <canvas id="graphe-meteo"></canvas>
-</div>
-<div class="carte" id="carte-co2">
-  <h2>CO₂ (ppm)</h2>
-  <canvas id="graphe-co2"></canvas>
-</div>
-
+</section>
+ 
+<section class="carte">
+  <h2>Particules <span>µg/m³</span></h2>
+  <div class="graphe"><canvas id="graphe-pm"></canvas></div>
+</section>
+ 
+<section class="carte">
+  <h2>Température <span>°C</span> et humidité <span>%</span></h2>
+  <div class="graphe"><canvas id="graphe-meteo"></canvas></div>
+</section>
+ 
+<section class="carte" id="carte-co2">
+  <h2>CO₂ <span>ppm</span></h2>
+  <div class="graphe"><canvas id="graphe-co2"></canvas></div>
+</section>
+ 
+</main>
+ 
 <script>
 // ---------- Réglages : à remplacer ----------
 const CLE = "2bdaa7f0a9d6a12e4aa62e4da2049bd8";   // clé du groupe (32 caractères)
 const DEVICE_ID = "";      // adresse MAC d'une carte, ou "" pour toutes
-
-// Une moyenne par intervalle selon la période : assez de points pour une
-// courbe lisible, pas trop pour rester rapide (7 jours en brut = 60 000 points).
-const MOYENNE = { "-6h": "5m", "-24h": "15m", "-7d": "1h" };
-
+ 
+// Une moyenne par intervalle selon la période.
+// 24 h passe de 15 min à 2 min (720 points : ça reste léger).
+const MOYENNE = { "-6h": "1m", "-24h": "2m", "-7d": "1h" };
+ 
 // Nom affiché et unité de chaque champ de l'API
 const CHAMPS = {
   pm1: ["PM1", "µg/m³"], pm25: ["PM2.5", "µg/m³"], pm10: ["PM10", "µg/m³"],
   temp: ["Température", "°C"], hum: ["Humidité", "%"], co2: ["CO₂", "ppm"],
 };
-
-const graphes = {};   // les graphes déjà dessinés, à remplacer au rechargement
-
+ 
+// Qualité de l'air d'après PM2.5 (seuils de l'indice ATMO français)
+const QUALITE = [
+  [10,  "Bon",              "#2e9e6b"],
+  [20,  "Moyen",            "#e0c200"],
+  [25,  "Dégradé",          "#f08a24"],
+  [50,  "Mauvais",          "#e5484d"],
+  [75,  "Très mauvais",     "#a1244a"],
+  [Infinity, "Extrêmement mauvais", "#6b2a8a"],
+];
+ 
+const graphes = {};          // les graphes déjà dessinés, à remplacer au rechargement
+let periodeCourante = "-24h";
+ 
+// Lit une variable CSS (pour que les graphes suivent le thème clair/sombre)
+const css = nom => getComputedStyle(document.documentElement).getPropertyValue(nom).trim();
+ 
 // Demande les mesures au serveur et renvoie la liste des points.
 async function chargerMesures(periode) {
   const params = new URLSearchParams({ key: CLE, start: periode, freq: MOYENNE[periode] });
@@ -84,29 +214,64 @@ async function chargerMesures(periode) {
   }
   return json.points;
 }
-
+ 
 // Dessine (ou redessine) un graphe avec une courbe par champ.
 function dessiner(idCanvas, points, champs) {
-  const etiquettes = points.map(p => new Date(p.time).toLocaleString("fr-FR",
-    { weekday: "short", hour: "2-digit", minute: "2-digit" }));
+  // Sur 7 jours on affiche le jour, sinon juste l'heure
+  const format = periodeCourante === "-7d"
+    ? { weekday: "short", hour: "2-digit", minute: "2-digit" }
+    : { hour: "2-digit", minute: "2-digit" };
+  const etiquettes = points.map(p => new Date(p.time).toLocaleString("fr-FR", format));
+  const couleurs = [css("--c1"), css("--c2"), css("--c3")];
+ 
   const courbes = champs
     .filter(c => points.some(p => p[c] !== undefined))   // seulement les champs mesurés
-    .map(c => ({
+    .map((c, i) => ({
       label: CHAMPS[c][0],
       data: points.map(p => p[c] ?? null),               // null = trou dans la courbe
+      borderColor: couleurs[i],
+      backgroundColor: couleurs[i] + "22",
+      fill: champs.length === 1,                         // aire sous la courbe si une seule courbe
       pointRadius: 0,
+      pointHoverRadius: 4,
       borderWidth: 2,
+      tension: 0.25,
     }));
-
+ 
+  const texte = css("--doux");
+  const grille = css("--grille");
+ 
   if (graphes[idCanvas]) graphes[idCanvas].destroy();
   graphes[idCanvas] = new Chart(document.getElementById(idCanvas), {
     type: "line",
     data: { labels: etiquettes, datasets: courbes },
-    options: { interaction: { mode: "index", intersect: false } },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: {
+          align: "start",
+          labels: { color: texte, usePointStyle: true, boxWidth: 8, font: { family: "DM Sans" } },
+        },
+        tooltip: { padding: 10, cornerRadius: 8 },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: texte, maxTicksLimit: 7, maxRotation: 0, autoSkip: true },
+        },
+        y: {
+          grid: { color: grille },
+          ticks: { color: texte },
+          border: { display: false },
+        },
+      },
+    },
   });
   return courbes.length;
 }
-
+ 
 // Affiche la valeur la plus récente de chaque champ.
 function afficherDerniere(points) {
   const derniere = points[points.length - 1];
@@ -115,17 +280,29 @@ function afficherDerniere(points) {
     .map(c => {
       const [nom, unite] = CHAMPS[c];
       const valeur = derniere[c].toFixed(c === "co2" ? 0 : 1);   // CO2 sans décimale
-      return `<div class="valeur">${nom}<b>${valeur} ${unite}</b></div>`;
+      return `<div class="valeur"><span class="nom">${nom}</span>`
+           + `<b>${valeur}<small>${unite}</small></b></div>`;
     });
   document.getElementById("valeurs").innerHTML = html.join("");
+ 
+  // Pastille de qualité de l'air (si PM2.5 mesuré)
+  const bloc = document.getElementById("qualite");
+  if (derniere.pm25 === undefined) { bloc.hidden = true; return; }
+  const [, nom, couleur] = QUALITE.find(q => derniere.pm25 <= q[0]);
+  document.getElementById("pastille").style.background = couleur;
+  document.getElementById("qualite-texte").innerHTML =
+    `Qualité de l'air : ${nom}<small>d'après les PM2.5, seuils de l'indice ATMO</small>`;
+  bloc.hidden = false;
 }
-
+ 
 async function rafraichir() {
   const etat = document.getElementById("etat");
-  const periode = document.getElementById("periode").value;
+  const periode = periodeCourante;
   try {
     const points = await chargerMesures(periode);
+    if (periode !== periodeCourante) return;   // l'utilisateur a changé de période entre-temps
     if (points.length === 0) {
+      etat.className = "erreur";
       etat.textContent = "Aucune mesure sur cette période : la carte envoie-t-elle ?";
       return;
     }
@@ -135,9 +312,9 @@ async function rafraichir() {
     const avecCo2 = dessiner("graphe-co2", points, ["co2"]);
     // Pas de CO2 sur un NebuleAir : on cache son graphe
     document.getElementById("carte-co2").hidden = (avecCo2 === 0);
-
+ 
     const date = new Date(points[points.length - 1].time).toLocaleString("fr-FR");
-    etat.className = "";
+    etat.className = "ok";
     etat.textContent = `${points.length} points, moyenne sur ${MOYENNE[periode]}. `
                      + `Dernière mesure : ${date}.`;
   } catch (erreur) {
@@ -145,10 +322,20 @@ async function rafraichir() {
     etat.textContent = "Erreur : " + erreur.message;
   }
 }
-
-document.getElementById("periode").addEventListener("change", rafraichir);
+ 
+// Boutons de période
+document.getElementById("periodes").addEventListener("click", e => {
+  const bouton = e.target.closest("button");
+  if (!bouton) return;
+  periodeCourante = bouton.dataset.periode;
+  document.querySelectorAll("#periodes button").forEach(b =>
+    b.setAttribute("aria-pressed", b === bouton));
+  rafraichir();
+});
+ 
 rafraichir();
-setInterval(rafraichir, 5 * 60 * 1000);   // mise à jour toutes les 5 minutes
+setInterval(rafraichir, 2 * 60 * 1000);   // mise à jour toutes les 2 minutes (comme la moyenne)
 </script>
 </body>
 </html>
+ 
