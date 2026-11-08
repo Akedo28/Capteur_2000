@@ -9,6 +9,10 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <!-- Chart.js : la bibliothèque qui dessine les graphes, chargée depuis un CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<!-- Leaflet : la carte géographique -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
   :root {
     --fond: #eef2f4; --carte: #ffffff; --bord: #d7e0e5; --texte: #14212b;
@@ -16,8 +20,17 @@
     --erreur: #b3261e; --ok: #2e9e6b; --bandeau: #0b6e8a;
     --c1: #0b6e8a; --c2: #e0a100; --c3: #7a4fd1;   /* couleurs des courbes */
   }
+  :root { color-scheme: light dark; }
+  :root[data-theme="light"] { color-scheme: light; }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+      --fond: #0f1a21; --carte: #17252e; --bord: #28394380; --texte: #e8f0f4;
+      --doux: #93a6b2; --accent: #5cc3df; --accent-fond: #1d3a46; --grille: #243640;
+      --erreur: #ff8a80; --ok: #55d198; --bandeau: #134a5c;
+      --c1: #5cc3df; --c2: #f2c14e; --c3: #b79bff;
+  }
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
       --fond: #0f1a21; --carte: #17252e; --bord: #28394380; --texte: #e8f0f4;
       --doux: #93a6b2; --accent: #5cc3df; --accent-fond: #1d3a46; --grille: #243640;
       --erreur: #ff8a80; --ok: #55d198; --bandeau: #134a5c;
@@ -66,15 +79,33 @@
   .periodes button:hover { color: var(--texte); }
   .periodes button[aria-pressed="true"] { background: var(--accent-fond); color: var(--accent); font-weight: 700; }
 
+  /* ---------- Outils : période libre, export, thème ---------- */
+  .outils { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 16px; }
+  .outils label { display: flex; align-items: center; gap: 6px; color: var(--doux); font-size: 0.9rem; }
+  .outils .espace { flex: 1; }
+  input[type="datetime-local"] {
+    font: inherit; font-size: 0.9rem; color: var(--texte); background: var(--carte);
+    border: 1px solid var(--bord); border-radius: 8px; padding: 5px 8px;
+  }
+  .btn, .mini {
+    font: inherit; font-size: 0.9rem; color: var(--texte); background: var(--carte);
+    border: 1px solid var(--bord); border-radius: 999px; padding: 6px 14px; cursor: pointer;
+  }
+  .btn:hover, .mini:hover { border-color: var(--accent); color: var(--accent); }
+  .btn[aria-pressed="true"] { background: var(--accent-fond); color: var(--accent); border-color: var(--accent); font-weight: 700; }
+  .mini { position: absolute; top: 14px; right: 16px; font-size: 0.75rem; padding: 3px 10px; }
+  input:focus-visible, .btn:focus-visible, .mini:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
   /* ---------- Statut ---------- */
   #etat { display: flex; align-items: center; gap: 8px; margin: 0 0 20px; font-size: 0.9rem; color: var(--doux); }
   #etat::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--doux); }
   #etat.ok::before { background: var(--ok); }
+  #etat.attention::before { background: #e08a00; }
   #etat.erreur { color: var(--erreur); }
   #etat.erreur::before { background: var(--erreur); }
 
   /* ---------- Cartes et tuiles de valeurs ---------- */
-  .carte { background: var(--carte); border: 1px solid var(--bord); border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; }
+  .carte { position: relative; background: var(--carte); border: 1px solid var(--bord); border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; }
   .carte h2 { margin: 0 0 12px; font-size: 1.05rem; font-weight: 700; }
   .carte h2 span { color: var(--doux); font-weight: 400; }
 
@@ -95,6 +126,10 @@
     display: flex; flex-wrap: wrap; gap: 0 10px; margin-top: 2px;
     font-size: 0.75rem; color: var(--doux); font-variant-numeric: tabular-nums;
   }
+
+  /* ---------- Carte géographique ---------- */
+  #carte-leaflet { height: 320px; border-radius: 8px; isolation: isolate; }
+  .note { margin: 8px 0 0; font-size: 0.8rem; color: var(--doux); }
 
   /* ---------- Graphes ---------- */
   .graphe { position: relative; height: 280px; }
@@ -127,6 +162,15 @@
     </div>
   </header>
 
+  <div class="outils">
+    <label>Période libre : du <input type="datetime-local" id="debut"></label>
+    <label>au <input type="datetime-local" id="fin"></label>
+    <button type="button" class="btn" id="appliquer" aria-pressed="false">Afficher</button>
+    <span class="espace"></span>
+    <button type="button" class="btn" id="csv">Exporter en CSV</button>
+    <button type="button" class="btn" id="theme">Mode sombre</button>
+  </div>
+
   <p id="etat" role="status">Chargement…</p>
 
   <section class="carte">
@@ -145,6 +189,12 @@
   <section class="carte">
     <h2>Moyenne <span id="titre-moyenne"></span></h2>
     <div class="valeurs" id="moyennes"></div>
+  </section>
+
+  <section class="carte" id="carte-geo">
+    <h2>Position <span>et qualité de l'air</span></h2>
+    <div id="carte-leaflet"></div>
+    <p class="note" id="note-carte"></p>
   </section>
 
   <section class="carte" id="carte-pm">
@@ -189,13 +239,8 @@ const DEVICE_ID = "";      // adresse MAC d'une carte, ou "" pour toutes
 const MOYENNE = { "-6h": "1m", "-24h": "2m", "-7d": "1h", "-30d": "1h" };
 const LIBELLE = { "-6h": "6 h", "-24h": "24 h", "-7d": "7 jours", "-30d": "1 mois" };
 
-// Format des dates selon la période (axes, heures du plus haut / plus bas)
+// Format des heures (les autres formats dépendent de la durée affichée, voir fenetre())
 const H = { hour: "2-digit", minute: "2-digit" };
-const FORMATS = {
-  "-6h": H, "-24h": H,
-  "-7d": { weekday: "short", ...H },
-  "-30d": { day: "2-digit", month: "2-digit", ...H },
-};
 
 // Comment montrer les valeurs manquantes (essaie-les !) :
 //   "bandes"     : zones rouges derrière la courbe, courbe coupée
@@ -206,9 +251,6 @@ const STYLE_TROUS = "bandes";
 const LEGENDE_TROUS = { bandes: "zones rouges", pointilles: "tirets", croix: "points rouges", coupure: "courbe coupée" };
 const ROUGE = "#e5484d";
 
-// Axe du temps : même échelle sur toute la période, graduations rondes
-const FORMAT_AXE = { "-6h": H, "-24h": H, "-7d": { weekday: "short" }, "-30d": { day: "2-digit", month: "2-digit" } };
-const PAS_AXE = { "-6h": 3600e3, "-24h": 4 * 3600e3, "-7d": 86400e3, "-30d": 5 * 86400e3 };
 // Durée en ms d'un texte comme "-6h", "2m", "1h" ou "-30d"
 const ms = s => parseFloat(s.replace("-", "")) * { m: 60e3, h: 3600e3, d: 86400e3 }[s.slice(-1)];
 
@@ -240,12 +282,13 @@ const NIVEAUX = [
 ];
 
 const graphes = {};          // les graphes déjà dessinés, à remplacer au rechargement
-let periodeCourante = "-24h";
+let periodeCourante = "-24h";        // "-6h", "-24h", "-7d", "-30d" ou "libre"
+let FEN, dernierPoints = [], plageLibre = null, laCarte = null, couchePoints = null, recadrer = true, requete = 0;
 
 const css = nom => getComputedStyle(document.documentElement).getPropertyValue(nom).trim();
 const aValeur = (p, c) => typeof p[c] === "number";
 const formater = (c, v) => v.toFixed(c === "co2" ? 0 : 1);   // CO2 sans décimale
-const heure = (t, periode) => new Date(t).toLocaleString("fr-FR", FORMATS[periode]);
+const heure = t => new Date(t).toLocaleString("fr-FR", FEN.formatHeure);
 const niveau = (c, v) => { const i = SEUILS[c].findIndex(s => v <= s); return i === -1 ? 5 : i; };
 
 Chart.defaults.font.family = '"DM Sans", system-ui, sans-serif';
@@ -276,8 +319,8 @@ const bandesTrous = {
 };
 
 // Demande les mesures au serveur et renvoie la liste des points.
-async function chargerMesures(periode) {
-  const params = new URLSearchParams({ key: CLE, start: periode, freq: MOYENNE[periode] });
+async function chargerMesures(fen) {
+  const params = new URLSearchParams({ key: CLE, start: fen.start, freq: fen.freq });
   if (DEVICE_ID) params.set("device_id", DEVICE_ID);
   const reponse = await fetch("https://api.aircarto.fr/iut-amu/data?" + params);
   const json = await reponse.json();
@@ -330,8 +373,8 @@ function legendeTrous() {
 function dessiner(g, points) {
   const carte = document.getElementById(g.carte);
   carte.hidden = false;                          // visible avant de dessiner, sinon taille nulle
-  const pas = ms(MOYENNE[periodeCourante]);
-  const fin = Date.now(), debut = fin - ms(periodeCourante);   // l'axe couvre toute la période
+  const pas = ms(FEN.freq);
+  const { debut, fin } = FEN;                    // l'axe couvre toute la période
   const rows = lignes(points, g.champs, pas);
   const courbes = g.champs
     .filter(c => points.some(p => aValeur(p, c)))   // seulement les champs mesurés
@@ -382,10 +425,10 @@ function dessiner(g, points) {
           type: "linear", min: debut, max: fin, grid: { display: false },
           ticks: {
             color: texte, maxRotation: 0,
-            callback: v => new Date(v).toLocaleString("fr-FR", FORMAT_AXE[periodeCourante]),
+            callback: v => new Date(v).toLocaleString("fr-FR", FEN.formatAxe),
           },
           afterBuildTicks(axe) {                 // graduations rondes (heures pleines, jours…)
-            const pasAxe = PAS_AXE[periodeCourante], dec = -new Date().getTimezoneOffset() * 60e3;
+            const pasAxe = FEN.pasAxe, dec = -new Date().getTimezoneOffset() * 60e3;
             const ticks = [];
             for (let t = Math.ceil((axe.min + dec) / pasAxe) * pasAxe - dec; t <= axe.max; t += pasAxe) ticks.push({ value: t });
             axe.ticks = ticks;
@@ -424,7 +467,7 @@ function afficherDerniere(points) {
 
 // Moyenne de chaque champ sur la période + heure du plus haut (▲) et du plus bas (▼)
 function afficherMoyenne(points) {
-  document.getElementById("titre-moyenne").textContent = "sur " + LIBELLE[periodeCourante];
+  document.getElementById("titre-moyenne").textContent = "sur " + FEN.libelle;
   document.getElementById("moyennes").innerHTML = Object.keys(CHAMPS).map(c => {
     const v = points.filter(p => aValeur(p, c));
     if (v.length === 0) return "";
@@ -439,38 +482,195 @@ function afficherMoyenne(points) {
   }).join("");
 }
 
+// ---------- Fenêtre de temps affichée ----------
+// Période libre : l'API ne connaît que "start" relatif ("-72h"), on demande donc
+// jusqu'à maintenant puis on garde seulement les points de la plage choisie.
+function fenetre() {
+  let debut, fin, start, freq, libelle;
+  if (periodeCourante === "libre") {
+    ({ debut, fin } = plageLibre);
+    const h = Math.ceil((Date.now() - debut) / 3600e3) + 1;
+    freq = h <= 6 ? "1m" : h <= 24 ? "2m" : h <= 72 ? "10m" : h <= 168 ? "30m" : "1h";
+    start = "-" + h + "h"; libelle = "la période choisie";
+  } else {
+    fin = Date.now(); debut = fin - ms(periodeCourante);
+    start = periodeCourante; freq = MOYENNE[periodeCourante]; libelle = LIBELLE[periodeCourante];
+  }
+  const span = fin - debut, jour = 864e5;
+  const pasAxe = [5, 10, 15, 30, 60, 120, 180, 240, 360, 720, 1440, 2880, 7200, 14400]
+    .map(m => m * 60e3).find(n => span / n <= 8) || 14400 * 60e3;
+  const court = span <= 30 * 3600e3;
+  return {
+    debut, fin, start, freq, libelle, pasAxe,
+    formatHeure: court ? H : span <= 8 * jour ? { weekday: "short", ...H } : { day: "2-digit", month: "2-digit", ...H },
+    formatAxe: pasAxe < jour ? (court ? H : { weekday: "short", ...H })
+             : span <= 8 * jour ? { weekday: "short", day: "2-digit" } : { day: "2-digit", month: "2-digit" },
+  };
+}
+
+// "12 min", "3 h 05", "2 j"
+function depuis(t) {
+  const m = Math.round(t / 60e3);
+  return m < 60 ? `${m} min` : m < 1440 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}` : `${Math.floor(m / 1440)} j`;
+}
+
+// ---------- Carte géographique ----------
+const CHAMP_GPS = { lat: "lat", lon: "lon" };   // noms des champs de position dans l'API, si la carte a un GPS
+const POSITION_FIXE = [43.3335, 5.4050];        // sinon : position fixe de la carte (à remplacer par la vraie)
+
+const niveauPoint = p => {
+  const n = Object.keys(SEUILS).filter(c => aValeur(p, c)).map(c => niveau(c, p[c]));
+  return n.length ? Math.max(...n) : null;
+};
+
+function dessinerCarte(points) {
+  const bloc = document.getElementById("carte-geo");
+  if (typeof L === "undefined") { bloc.hidden = true; return; }   // Leaflet n'a pas pu se charger
+  if (!laCarte) {
+    laCarte = L.map("carte-leaflet").setView(POSITION_FIXE, 15);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(laCarte);
+    couchePoints = L.layerGroup().addTo(laCarte);
+  }
+  couchePoints.clearLayers();
+  const gps = points.filter(p => aValeur(p, CHAMP_GPS.lat) && aValeur(p, CHAMP_GPS.lon));
+  const saut = Math.ceil(gps.length / 400);                    // au plus ~400 points sur la carte
+  const liste = gps.length ? gps.filter((_, i) => i % saut === 0 || i === gps.length - 1) : [points[points.length - 1]];
+  const coords = liste.map(p => gps.length ? [p[CHAMP_GPS.lat], p[CHAMP_GPS.lon]] : POSITION_FIXE);
+  liste.forEach((p, i) => {
+    const n = niveauPoint(p);
+    const infos = ["pm1", "pm25", "pm10"].filter(c => aValeur(p, c)).map(c => `${CHAMPS[c][0]} : ${formater(c, p[c])} µg/m³`).join("<br>");
+    L.circleMarker(coords[i], { radius: gps.length ? 6 : 10, color: "#fff", weight: 2, fillOpacity: 0.95, fillColor: n === null ? "#888" : NIVEAUX[n][1] })
+      .bindPopup(`<b>${heure(p.time)}</b><br>${n === null ? "" : NIVEAUX[n][0] + "<br>"}${infos}`).addTo(couchePoints);
+  });
+  if (gps.length > 1) L.polyline(coords, { color: "#5b6b77", weight: 2, opacity: 0.6 }).addTo(couchePoints);
+  laCarte.invalidateSize();
+  if (recadrer) {                                              // on ne recadre pas à chaque rafraîchissement (zoom de l'utilisateur)
+    coords.length > 1 ? laCarte.fitBounds(coords, { padding: [30, 30], maxZoom: 17 }) : laCarte.setView(coords[0], 15);
+    recadrer = false;
+  }
+  document.getElementById("note-carte").textContent = gps.length
+    ? "Chaque point est coloré selon la qualité de l'air (le pire des trois PM)."
+    : "Position fixe (réglage POSITION_FIXE) : le point est coloré selon la dernière mesure.";
+}
+
+// ---------- Export ----------
+function telecharger(blob, nom) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = nom; a.click();
+  URL.revokeObjectURL(a.href);
+}
+function exporterCsv() {
+  const champs = Object.keys(CHAMPS);
+  const gps = dernierPoints.some(p => aValeur(p, CHAMP_GPS.lat));
+  const noms = ["time", ...champs, ...(gps ? [CHAMP_GPS.lat, CHAMP_GPS.lon] : [])];
+  const lignes = [noms.join(";")];
+  for (const p of dernierPoints)
+    lignes.push(noms.map(c => c === "time" ? p.time : aValeur(p, c) ? String(p[c]).replace(".", ",") : "").join(";"));
+  // séparateur ";" et virgule décimale : s'ouvre directement dans Excel en français
+  telecharger(new Blob(["\ufeff" + lignes.join("\n")], { type: "text/csv;charset=utf-8" }), `capteur_${new Date().toISOString().slice(0, 10)}.csv`);
+}
+function exporterPng(id) {
+  const src = document.getElementById(id), c = document.createElement("canvas");
+  c.width = src.width; c.height = src.height;
+  const x = c.getContext("2d");
+  x.fillStyle = css("--carte"); x.fillRect(0, 0, c.width, c.height);   // fond opaque
+  x.drawImage(src, 0, 0);
+  c.toBlob(b => telecharger(b, `${id}.png`));
+}
+GRAPHES.forEach(g => {                           // un petit bouton PNG dans chaque carte de graphe
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "mini"; b.textContent = "PNG"; b.title = "Enregistrer ce graphe en image";
+  b.addEventListener("click", () => exporterPng(g.canvas));
+  document.getElementById(g.carte).appendChild(b);
+});
+document.getElementById("csv").addEventListener("click", exporterCsv);
+
+// ---------- Affichage et rafraîchissement ----------
+function afficher(points) {
+  afficherDerniere(points);
+  afficherMoyenne(points);
+  dessinerCarte(points);
+  return Math.max(...GRAPHES.map(g => dessiner(g, points)));   // nombre de trous repérés
+}
+
 async function rafraichir() {
   const etat = document.getElementById("etat");
-  const periode = periodeCourante;
+  const num = ++requete;
+  FEN = fenetre();
   try {
-    const points = await chargerMesures(periode);
-    if (periode !== periodeCourante) return;   // période changée pendant la requête
+    let points = await chargerMesures(FEN);
+    if (num !== requete) return;                 // une requête plus récente a pris le relais
+    if (periodeCourante === "libre")
+      points = points.filter(p => { const t = new Date(p.time).getTime(); return t >= FEN.debut && t <= FEN.fin; });
     if (points.length === 0) {
       etat.className = "erreur";
-      etat.textContent = "Aucune mesure sur cette période : la carte envoie-t-elle ?";
+      etat.textContent = periodeCourante === "libre" ? "Aucune mesure sur la période choisie."
+                                                    : "Aucune mesure sur cette période : la carte envoie-t-elle ?";
       return;
     }
-    afficherDerniere(points);
-    afficherMoyenne(points);
-    const nb = Math.max(...GRAPHES.map(g => dessiner(g, points)));   // trous repérés
+    dernierPoints = points;
+    const nb = afficher(points);
 
-    const date = new Date(points[points.length - 1].time).toLocaleString("fr-FR");
-    etat.className = "ok";
-    etat.textContent = `${points.length} points, moyenne sur ${MOYENNE[periode]}. Dernière mesure : ${date}.`
-      + (nb ? ` ${nb} interruption${nb > 1 ? "s" : ""} de mesure (${LEGENDE_TROUS[STYLE_TROUS]}).` : "");
+    // Carte hors ligne ? (seulement pour les périodes qui vont jusqu'à maintenant)
+    const dernier = new Date(points[points.length - 1].time).getTime();
+    const age = Date.now() - dernier, seuil = Math.max(10 * 60e3, 2 * ms(FEN.freq));
+    let classe = "ok", texte = `${points.length} points, moyenne sur ${FEN.freq}. Dernière mesure : ${new Date(dernier).toLocaleString("fr-FR")}`;
+    if (periodeCourante !== "libre") {
+      if (age > seuil) {
+        classe = age > 6 * seuil ? "erreur" : "attention";
+        texte = `Carte peut-être hors ligne : aucune mesure depuis ${depuis(age)}. ` + texte;
+      } else texte += ` (il y a ${depuis(age)})`;
+    }
+    texte += "." + (nb ? ` ${nb} interruption${nb > 1 ? "s" : ""} de mesure (${LEGENDE_TROUS[STYLE_TROUS]}).` : "");
+    etat.className = classe;
+    etat.textContent = texte;
   } catch (erreur) {
     etat.className = "erreur";
     etat.textContent = "Erreur : " + erreur.message;
   }
 }
 
+// ---------- Boutons ----------
+const boutonsPeriode = () => document.querySelectorAll("#periodes button");
 document.getElementById("periodes").addEventListener("click", e => {
   const bouton = e.target.closest("button");
   if (!bouton) return;
-  periodeCourante = bouton.dataset.periode;
-  document.querySelectorAll("#periodes button").forEach(b => b.setAttribute("aria-pressed", b === bouton));
+  periodeCourante = bouton.dataset.periode; recadrer = true;
+  boutonsPeriode().forEach(b => b.setAttribute("aria-pressed", b === bouton));
+  document.getElementById("appliquer").setAttribute("aria-pressed", "false");
   rafraichir();
 });
+
+// Période libre : choisir un début et une fin (90 jours en arrière au maximum)
+const pad = n => String(n).padStart(2, "0");
+const pourInput = t => { const d = new Date(t); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+document.getElementById("debut").value = pourInput(Date.now() - 864e5);
+document.getElementById("fin").value = pourInput(Date.now());
+document.getElementById("appliquer").addEventListener("click", () => {
+  const etat = document.getElementById("etat");
+  const debut = new Date(document.getElementById("debut").value).getTime();
+  const fin = Math.min(new Date(document.getElementById("fin").value).getTime(), Date.now());
+  const erreur = isNaN(debut) || isNaN(fin) || debut >= fin ? "choisis une date de début avant la date de fin."
+               : Date.now() - debut > 90 * 864e5 ? "90 jours en arrière au maximum." : "";
+  if (erreur) { etat.className = "erreur"; etat.textContent = "Période libre : " + erreur; return; }
+  plageLibre = { debut, fin }; periodeCourante = "libre"; recadrer = true;
+  boutonsPeriode().forEach(b => b.setAttribute("aria-pressed", "false"));
+  document.getElementById("appliquer").setAttribute("aria-pressed", "true");
+  rafraichir();
+});
+
+// Thème clair / sombre (mémorisé dans le navigateur)
+const racine = document.documentElement;
+const themeActuel = () => racine.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+const majBoutonTheme = () => { document.getElementById("theme").textContent = themeActuel() === "dark" ? "Mode clair" : "Mode sombre"; };
+document.getElementById("theme").addEventListener("click", () => {
+  const nouveau = themeActuel() === "dark" ? "light" : "dark";
+  racine.dataset.theme = nouveau;
+  try { localStorage.setItem("theme", nouveau); } catch (e) {}
+  majBoutonTheme();
+  if (dernierPoints.length) afficher(dernierPoints);   // redessiner avec les nouvelles couleurs
+});
+majBoutonTheme();
 
 rafraichir();
 setInterval(rafraichir, 2 * 60 * 1000);   // mise à jour toutes les 2 minutes
