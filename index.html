@@ -299,6 +299,22 @@ function trous(rows, debut, fin, pas) {
   return res;
 }
 
+// Entrée de légende qui explique les trous (courbe vide, elle ne sert qu'à la légende)
+const LIBELLE_TROUS = {
+  bandes: "Pas de données", croix: "Pas de données",
+  pointilles: "Pas de données (tirets)", coupure: "Pas de données (courbe coupée)",
+};
+function legendeTrous() {
+  const rouge = STYLE_TROUS === "bandes" || STYLE_TROUS === "croix";
+  const couleur = rouge ? ROUGE : css("--doux");
+  return {
+    label: LIBELLE_TROUS[STYLE_TROUS], data: [],
+    borderColor: couleur, backgroundColor: couleur,
+    pointBackgroundColor: couleur, pointBorderColor: couleur,
+    pointStyle: STYLE_TROUS === "bandes" ? "rectRounded" : STYLE_TROUS === "croix" ? "circle" : "dash",
+  };
+}
+
 // Dessine (ou redessine) un graphe ; renvoie le nombre de trous repérés.
 function dessiner(g, points) {
   const carte = document.getElementById(g.carte);
@@ -329,6 +345,7 @@ function dessiner(g, points) {
   if (courbes.length === 0) { carte.hidden = true; return 0; }   // ex. pas de CO2 sur un NebuleAir
 
   const liste = trous(rows, debut, fin, pas);
+  if (liste.length) courbes.push(legendeTrous());   // légende : rouge = pas de données
   const texte = css("--doux");
   graphes[g.canvas] = new Chart(document.getElementById(g.canvas), {
     type: "line",
