@@ -758,7 +758,7 @@ async function afficherDerniereReception(num) {
     if (num !== requete) return;
     el.textContent = pts.length
       ? "Dernière mesure reçue le " + new Date(pts[pts.length - 1].time).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" })
-        + ". Choisis une période plus longue pour la voir."
+        + "."
       : "Aucune mesure reçue depuis plus d'un mois.";
   } catch (e) { /* pas grave : on laisse juste le titre */ }
 }
