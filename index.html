@@ -74,21 +74,39 @@
     border-radius: 999px; padding: 6px 14px; cursor: pointer;
   }
   .periodes button:hover { color: var(--texte); }
-  header .reglages { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-  .freq { display: flex; align-items: center; gap: 8px; color: var(--doux); font-size: 0.9rem; }
-  .freq select {
-    font: inherit; font-size: 0.9rem; color: var(--texte); background: var(--carte);
-    border: 1px solid var(--bord); border-radius: 999px; padding: 6px 12px; cursor: pointer;
-  }
-  .freq select:hover { border-color: var(--accent); }
-  .freq select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .periodes button[aria-pressed="true"] { background: var(--accent-fond); color: var(--accent); font-weight: 700; }
 
-  /* ---------- Outils : période libre, export, thème ---------- */
-  .outils { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 16px; }
-  .outils label { display: flex; align-items: center; gap: 6px; color: var(--doux); font-size: 0.9rem; }
-  .outils .espace { flex: 1; }
-  .outils .actions { display: flex; gap: 12px; }
+  /* ---------- Barre de réglages ---------- */
+  .barre {
+    display: grid; gap: 12px; margin-bottom: 14px; padding: 14px 16px;
+    background: var(--carte); border: 1px solid var(--bord); border-radius: 12px;
+  }
+  .barre .ligne { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; }
+  .barre .ligne + .ligne { padding-top: 12px; border-top: 1px solid var(--bord); }
+  .groupe { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; color: var(--doux); font-size: 0.9rem; }
+  .groupe label { display: flex; align-items: center; gap: 6px; }
+  .etiquette { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--doux); }
+  .espace { flex: 1; }
+  .barre .periodes { background: var(--fond); border-color: transparent; }
+  .barre select {
+    font: inherit; font-size: 0.9rem; color: var(--texte); background: var(--fond);
+    border: 1px solid var(--bord); border-radius: 999px; padding: 6px 12px; cursor: pointer;
+  }
+  .barre select:hover { border-color: var(--accent); }
+  .barre select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn.principal { background: var(--accent); border-color: var(--accent); color: var(--carte); font-weight: 700; }
+  .btn.principal:hover { color: var(--carte); filter: brightness(1.1); }
+  .btn.principal:disabled { cursor: progress; opacity: 0.75; }
+  .icone-rafraichir { display: inline-block; }
+  .charge .icone-rafraichir { animation: tourne 0.8s linear infinite; }
+  @keyframes tourne { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .charge .icone-rafraichir { animation: none; } }
+
+  /* ---------- Titres de rubrique ---------- */
+  .rubrique {
+    margin: 28px 0 10px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--accent);
+  }
   #theme { min-width: 7.8rem; }                 /* "Mode sombre" et "Mode clair" prennent la même place */
   input[type="datetime-local"] {
     font: inherit; font-size: 0.85rem; color: var(--texte); background: var(--carte);
@@ -104,7 +122,7 @@
   input:focus-visible, .btn:focus-visible, .mini:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   /* ---------- Statut ---------- */
-  #etat { display: flex; align-items: center; gap: 8px; margin: 0 0 20px; font-size: 0.9rem; color: var(--doux); }
+  #etat { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 0.9rem; color: var(--doux); }
   #etat::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--doux); }
   #etat.ok::before { background: var(--ok); }
   #etat.attention::before { background: #e08a00; }
@@ -116,9 +134,9 @@
   .carte h2 { margin: 0 0 12px; font-size: 1.05rem; font-weight: 700; }
   .carte h2 span { color: var(--doux); font-weight: 400; }
 
-  #qualite { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--bord); }
-  #pastille { width: 14px; height: 14px; margin-top: 7px; border-radius: 50%; background: var(--doux); flex: none; }
-  #qualite-texte { font-size: 1.15rem; font-weight: 700; }
+  #qualite { display: flex; align-items: flex-start; gap: 14px; border-left: 6px solid var(--doux); }
+  #pastille { width: 16px; height: 16px; margin-top: 7px; border-radius: 50%; background: var(--doux); flex: none; }
+  #qualite-texte { font-size: 1.3rem; font-weight: 700; }
   #qualite small { display: block; color: var(--doux); font-size: 0.8rem; }
   #qualite small a { color: var(--accent); text-underline-offset: 2px; }
   #qualite small a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
@@ -126,15 +144,20 @@
   .puce { display: inline-flex; align-items: center; gap: 6px; }
   .puce i { width: 9px; height: 9px; border-radius: 50%; }
 
-  .valeurs { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
-  .valeur { padding: 10px 12px; border-radius: 8px; background: var(--fond); }
-  .valeur .nom { font-size: 0.85rem; color: var(--doux); }
-  .valeur b { display: block; font-size: 1.7rem; line-height: 1.2; font-variant-numeric: tabular-nums; }
-  .valeur b small { font-size: 0.8rem; font-weight: 400; color: var(--doux); margin-left: 2px; }
+  /* --n = nombre de tuiles (réglé par le script) : toutes sur une ligne */
+  .valeurs { display: grid; gap: 10px; grid-template-columns: repeat(var(--n, 6), minmax(0, 1fr)); }
+  .valeur { min-width: 0; padding: 10px 10px; border-radius: 8px; background: var(--fond); }
+  .valeur .nom { font-size: 0.8rem; color: var(--doux); }
+  .valeur > b { display: block; font-size: 1.5rem; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .valeur > b small { font-size: 0.75rem; font-weight: 400; color: var(--doux); margin-left: 2px; }
   .extremes {
-    display: flex; flex-wrap: wrap; gap: 0 10px; margin-top: 2px;
-    font-size: 0.75rem; color: var(--doux); font-variant-numeric: tabular-nums;
+    display: grid; gap: 3px; margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--bord);
+    font-size: 0.72rem; color: var(--doux); font-variant-numeric: tabular-nums;
   }
+  .extremes > span { display: flex; align-items: baseline; justify-content: space-between; gap: 4px; }
+  .extremes > span > span { white-space: nowrap; }
+  .extremes b { color: var(--texte); }
+  .extremes time { min-width: 0; font-size: 0.68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .note { margin: 8px 0 0; font-size: 0.8rem; color: var(--doux); }
 
@@ -142,11 +165,13 @@
   .graphe { position: relative; height: 280px; }
   .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
   .duo > .carte { margin: 0; min-width: 0; }
+  .duo:has(> .carte[hidden]) { grid-template-columns: 1fr; }   /* un seul graphe : toute la largeur */
   .duo .graphe { height: 240px; }
 
   /* ---------- Navigation entre les pages ---------- */
   .nav { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 28px; }
   .marque { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--texte); text-decoration: none; }
+  .nav-droite { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
   .marque i { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
   .onglets { display: inline-flex; padding: 4px; gap: 4px; background: var(--carte); border: 1px solid var(--bord); border-radius: 999px; }
   .onglets a { color: var(--doux); text-decoration: none; border-radius: 999px; padding: 6px 16px; font-size: 0.95rem; }
@@ -173,10 +198,17 @@
   @keyframes clignote { 50% { opacity: 0.15; } }
   @media (prefers-reduced-motion: reduce) { .led .clignote { animation: none; } }
 
+  @media (max-width: 960px) and (min-width: 761px) {
+    .valeur > b { font-size: 1.3rem; }
+  }
+  @media (max-width: 420px) {
+    .valeurs { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  }
   @media (max-width: 760px) {
     .logo img { height: 48px; }
     .led { align-items: flex-start; flex-wrap: wrap; }
     .duo { grid-template-columns: 1fr; }
+    .valeurs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     h1 { font-size: 2.1rem; }
     .graphe, .duo .graphe { height: 240px; }
   }
@@ -187,9 +219,12 @@
 
 <nav class="nav" aria-label="Navigation principale">
   <a class="marque" href="#mesures"><i></i><span id="nom-projet"></span></a>
-  <div class="onglets">
-    <a href="#mesures" data-vue="mesures">Mesures</a>
-    <a href="#projet" data-vue="projet">Le projet</a>
+  <div class="nav-droite">
+    <div class="onglets">
+      <a href="#mesures" data-vue="mesures">Mesures</a>
+      <a href="#projet" data-vue="projet">Le projet</a>
+    </div>
+    <button type="button" class="btn" id="theme">Mode sombre</button>
   </div>
 </nav>
 
@@ -202,57 +237,74 @@
       <h1>Capteur de qualité de l'air</h1>
       <p>Mesures envoyées par la carte du groupe au serveur AirCarto.</p>
     </div>
-    <div class="reglages">
-    <div class="periodes" id="periodes" role="group" aria-label="Période affichée">
-      <button type="button" data-periode="-6h" aria-pressed="false">6 h</button>
-      <button type="button" data-periode="-24h" aria-pressed="true">24 h</button>
-      <button type="button" data-periode="-7d" aria-pressed="false">7 jours</button>
-      <button type="button" data-periode="-30d" aria-pressed="false">1 mois</button>
-    </div>
-    <label class="freq">Moyenne sur
-      <select id="freq" title="Intervalle sur lequel les mesures sont moyennées">
-        <option value="auto">Auto</option>
-        <option value="1m">1 min</option>
-        <option value="2m">2 min</option>
-        <option value="5m">5 min</option>
-        <option value="10m">10 min</option>
-        <option value="30m">30 min</option>
-        <option value="1h">1 h</option>
-        <option value="6h">6 h</option>
-      </select>
-    </label>
-    </div>
   </header>
 
-  <div class="outils">
-    <label>Période libre <input type="datetime-local" id="debut"></label>
-    <label>au <input type="datetime-local" id="fin"></label>
-    <button type="button" class="btn" id="appliquer" aria-pressed="false">Afficher</button>
-    <span class="espace"></span>
-    <div class="actions">
-      <button type="button" class="btn" id="csv">Exporter en CSV</button>
-      <button type="button" class="btn" id="theme">Mode sombre</button>
+  <!-- Réglages : ce qui est affiché, et les actions -->
+  <section class="barre" aria-label="Réglages de l'affichage">
+    <div class="ligne">
+      <div class="groupe">
+        <span class="etiquette">Période</span>
+        <div class="periodes" id="periodes" role="group" aria-label="Période affichée">
+          <button type="button" data-periode="-6h" aria-pressed="false">6 h</button>
+          <button type="button" data-periode="-24h" aria-pressed="true">24 h</button>
+          <button type="button" data-periode="-7d" aria-pressed="false">7 jours</button>
+          <button type="button" data-periode="-30d" aria-pressed="false">1 mois</button>
+        </div>
+      </div>
+      <label class="groupe">
+        <span class="etiquette">Moyenne sur</span>
+        <select id="freq" title="Intervalle sur lequel les mesures sont moyennées">
+          <option value="auto">Auto</option>
+          <option value="1m">1 min</option>
+          <option value="2m">2 min</option>
+          <option value="5m">5 min</option>
+          <option value="10m">10 min</option>
+          <option value="30m">30 min</option>
+          <option value="1h">1 h</option>
+          <option value="6h">6 h</option>
+        </select>
+      </label>
+      <span class="espace"></span>
+      <button type="button" class="btn principal" id="rafraichir" title="Recharger les dernières mesures">
+        <span class="icone-rafraichir" aria-hidden="true">↻</span> Rafraîchir
+      </button>
     </div>
-  </div>
+    <div class="ligne">
+      <div class="groupe">
+        <span class="etiquette">Période libre</span>
+        <label>du <input type="datetime-local" id="debut"></label>
+        <label>au <input type="datetime-local" id="fin"></label>
+        <button type="button" class="btn" id="appliquer" aria-pressed="false">Afficher</button>
+      </div>
+      <span class="espace"></span>
+      <button type="button" class="btn" id="csv">Exporter en CSV</button>
+    </div>
+  </section>
 
   <p id="etat" role="status">Chargement…</p>
 
-  <section class="carte">
-    <h2>Dernière mesure</h2>
-    <div id="qualite" hidden>
-      <span id="pastille"></span>
-      <div>
-        <div id="qualite-texte"></div>
-        <div id="puces"></div>
-        <small>Niveau le plus élevé parmi PM1, PM2.5 et PM10 (<a href="https://www.atmo-france.org/article/lindice-atmo" target="_blank" rel="noopener" title="L'indice ATMO expliqué par Atmo France, avec le tableau des seuils">seuils ATMO</a>)</small>
-      </div>
+  <h2 class="rubrique">En ce moment</h2>
+
+  <section class="carte" id="qualite" hidden>
+    <span id="pastille"></span>
+    <div>
+      <div id="qualite-texte"></div>
+      <div id="puces"></div>
+      <small>Niveau le plus élevé parmi PM1, PM2.5 et PM10 (<a href="https://www.atmo-france.org/article/lindice-atmo" target="_blank" rel="noopener" title="L'indice ATMO expliqué par Atmo France, avec le tableau des seuils">seuils ATMO</a>)</small>
     </div>
+  </section>
+
+  <section class="carte">
+    <h2>Dernière mesure <span id="heure-derniere"></span></h2>
     <div class="valeurs" id="valeurs"></div>
   </section>
+
+  <h2 class="rubrique">Sur la période</h2>
 
   <section class="carte">
     <h2>Moyenne <span id="titre-moyenne"></span></h2>
     <div class="valeurs" id="moyennes"></div>
+    <p class="note">▲ valeur la plus haute et ▼ la plus basse (même unité que la moyenne), avec leur date. Calculées sur les moyennes : choisir une moyenne plus fine pour voir les pics courts.</p>
   </section>
 
   <section class="carte" id="carte-pm">
@@ -271,15 +323,16 @@
     </section>
   </div>
 
-  <section class="carte" id="carte-pression">
-    <h2>Pression <span>hPa</span></h2>
-    <div class="graphe"><canvas id="graphe-pression"></canvas></div>
-  </section>
-
-  <section class="carte" id="carte-co2">
-    <h2>CO₂ <span>ppm</span></h2>
-    <div class="graphe"><canvas id="graphe-co2"></canvas></div>
-  </section>
+  <div class="duo">
+    <section class="carte" id="carte-pression">
+      <h2>Pression <span>hPa</span></h2>
+      <div class="graphe"><canvas id="graphe-pression"></canvas></div>
+    </section>
+    <section class="carte" id="carte-co2">
+      <h2>CO₂ <span>ppm</span></h2>
+      <div class="graphe"><canvas id="graphe-co2"></canvas></div>
+    </section>
+  </div>
 </main>
 
 </div>
@@ -572,10 +625,20 @@ function tuile(c, valeur, extra = "") {
        + `<b>${formater(c, valeur)}<small>${unite}</small></b>${extra}</div>`;
 }
 
+// Date courte pour les extrêmes et la dernière mesure : "19/11 03:12"
+const dateCourte = t => new Date(t).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+// Remplit une rangée de tuiles et règle le nombre de colonnes (toutes sur une ligne)
+function remplirTuiles(id, tuiles) {
+  const el = document.getElementById(id);
+  el.innerHTML = tuiles.join("");
+  el.style.setProperty("--n", Math.max(tuiles.length, 1));
+}
+
 function afficherDerniere(points) {
   const d = points[points.length - 1];
-  document.getElementById("valeurs").innerHTML = Object.keys(CHAMPS)
-    .filter(c => aValeur(d, c)).map(c => tuile(c, d[c])).join("");
+  remplirTuiles("valeurs", Object.keys(CHAMPS).filter(c => aValeur(d, c)).map(c => tuile(c, d[c])));
+  document.getElementById("heure-derniere").textContent = "· " + dateCourte(d.time);
 
   // Qualité de l'air : le pire des niveaux PM1 / PM2.5 / PM10
   const bloc = document.getElementById("qualite");
@@ -583,28 +646,28 @@ function afficherDerniere(points) {
   if (niveaux.length === 0) { bloc.hidden = true; return; }
   const pire = Math.max(...niveaux.map(x => x.n));
   document.getElementById("pastille").style.background = NIVEAUX[pire][1];
+  bloc.style.borderLeftColor = NIVEAUX[pire][1];
   document.getElementById("qualite-texte").textContent = "Qualité de l'air : " + NIVEAUX[pire][0];
   document.getElementById("puces").innerHTML = niveaux.map(x =>
     `<span class="puce"><i style="background:${NIVEAUX[x.n][1]}"></i>${CHAMPS[x.c][0]} ${NIVEAUX[x.n][0]}</span>`).join("");
   bloc.hidden = false;
 }
 
-// Moyenne de chaque champ sur la période + valeur la plus haute (▲) et la plus basse (▼)
-// (l'heure de chaque extrême s'affiche au survol)
+// Moyenne de chaque champ sur la période + valeur la plus haute (▲) et la plus basse (▼) avec leur date
 function afficherMoyenne(points) {
   document.getElementById("titre-moyenne").textContent = "sur " + FEN.libelle;
-  document.getElementById("moyennes").innerHTML = Object.keys(CHAMPS).map(c => {
+  remplirTuiles("moyennes", Object.keys(CHAMPS).filter(c => points.some(p => aValeur(p, c))).map(c => {
     const v = points.filter(p => aValeur(p, c));
-    if (v.length === 0) return "";
     const moy = v.reduce((s, p) => s + p[c], 0) / v.length;
     const haut = v.reduce((a, p) => p[c] > a[c] ? p : a);
     const bas = v.reduce((a, p) => p[c] < a[c] ? p : a);
     const u = CHAMPS[c][1];
-    const extra = `<span class="extremes" title="Plus haut le ${heure(haut.time)} / plus bas le ${heure(bas.time)}">`
-      + `<span aria-label="Valeur la plus haute">▲ ${formater(c, haut[c])} ${u}</span>`
-      + `<span aria-label="Valeur la plus basse">▼ ${formater(c, bas[c])} ${u}</span></span>`;
+    const extreme = (fleche, nom, p) =>
+      `<span aria-label="${nom} : ${formater(c, p[c])} ${u} le ${dateCourte(p.time)}">`
+      + `<span>${fleche} <b>${formater(c, p[c])}</b></span><time datetime="${p.time}">${dateCourte(p.time)}</time></span>`;
+    const extra = `<div class="extremes">${extreme("▲", "Plus haut", haut)}${extreme("▼", "Plus bas", bas)}</div>`;
     return tuile(c, moy, extra);
-  }).join("");
+  }));
 }
 
 // ---------- Fenêtre de temps affichée ----------
@@ -733,6 +796,15 @@ function majMenuFreq() {
   if (menuFreq.selectedOptions[0].disabled) { menuFreq.value = "auto"; freqChoisie = "auto"; }
 }
 menuFreq.addEventListener("change", () => { freqChoisie = menuFreq.value; rafraichir(); });
+
+// Bouton « Rafraîchir » : recharge les mesures tout de suite (les périodes 6 h…1 mois avancent jusqu'à maintenant)
+const boutonRafraichir = document.getElementById("rafraichir");
+boutonRafraichir.addEventListener("click", async () => {
+  boutonRafraichir.disabled = true;
+  boutonRafraichir.classList.add("charge");
+  try { await rafraichir(); }
+  finally { boutonRafraichir.disabled = false; boutonRafraichir.classList.remove("charge"); }
+});
 majMenuFreq();
 
 // ---------- Boutons ----------
