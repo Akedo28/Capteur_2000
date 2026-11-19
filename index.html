@@ -122,12 +122,6 @@
   input:focus-visible, .btn:focus-visible, .mini:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   /* ---------- Statut ---------- */
-  #etat { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 0.9rem; color: var(--doux); }
-  #etat::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--doux); }
-  #etat.ok::before { background: var(--ok); }
-  #etat.attention::before { background: #e08a00; }
-  #etat.erreur { color: var(--erreur); }
-  #etat.erreur::before { background: var(--erreur); }
 
   /* ---------- Cartes et tuiles de valeurs ---------- */
   .carte { position: relative; background: var(--carte); border: 1px solid var(--bord); border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; }
@@ -281,7 +275,6 @@
     </div>
   </section>
 
-  <p id="etat" role="status" hidden></p>   <!-- visible seulement en cas d'erreur -->
 
   <h2 class="rubrique">En ce moment</h2>
 
@@ -741,7 +734,6 @@ function afficher(points) {
 }
 
 async function rafraichir() {
-  const etat = document.getElementById("etat");
   const num = ++requete;
   FEN = fenetre();
   try {
@@ -750,19 +742,13 @@ async function rafraichir() {
     if (periodeCourante === "libre")
       points = points.filter(p => { const t = new Date(p.time).getTime(); return t >= FEN.debut && t <= FEN.fin; });
     if (points.length === 0) {
-      etat.hidden = false;
-      etat.className = "erreur";
-      etat.textContent = periodeCourante === "libre" ? "Aucune mesure sur la période choisie."
-                                                    : "Aucune mesure sur cette période : la carte envoie-t-elle ?";
+      console.warn("Aucune mesure sur cette période");   // message visible seulement dans la console (F12)
       return;
     }
     dernierPoints = points;
     afficher(points);
-    etat.hidden = true;                          // tout va bien : pas de ligne d'état
   } catch (erreur) {
-    etat.hidden = false;
-    etat.className = "erreur";
-    etat.textContent = "Erreur : " + erreur.message;
+    console.error("Erreur de chargement : " + erreur.message);   // visible dans la console (F12)
   }
 }
 
@@ -813,12 +799,11 @@ const pourInput = t => { const d = new Date(t); return `${d.getFullYear()}-${pad
 document.getElementById("debut").value = pourInput(Date.now() - 864e5);
 document.getElementById("fin").value = pourInput(Date.now());
 document.getElementById("appliquer").addEventListener("click", () => {
-  const etat = document.getElementById("etat");
   const debut = new Date(document.getElementById("debut").value).getTime();
   const fin = Math.min(new Date(document.getElementById("fin").value).getTime(), Date.now());
   const erreur = isNaN(debut) || isNaN(fin) || debut >= fin ? "choisis une date de début avant la date de fin."
                : Date.now() - debut > 90 * 864e5 ? "90 jours en arrière au maximum." : "";
-  if (erreur) { etat.hidden = false; etat.className = "erreur"; etat.textContent = "Période libre : " + erreur; return; }
+  if (erreur) { console.warn("Période libre : " + erreur); return; }
   plageLibre = { debut, fin }; periodeCourante = "libre";
   boutonsPeriode().forEach(b => b.setAttribute("aria-pressed", "false"));
   document.getElementById("appliquer").setAttribute("aria-pressed", "true");
