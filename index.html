@@ -153,6 +153,9 @@
   .extremes b { color: var(--texte); }
   .extremes time { min-width: 0; font-size: 0.68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+  .vide { margin-top: 24px; padding: 28px 24px; text-align: center; }
+  .vide h2 { margin-bottom: 6px; }
+  .vide p { margin: 0; color: var(--doux); }
   .note { margin: 8px 0 0; font-size: 0.8rem; color: var(--doux); }
 
   /* ---------- Graphes ---------- */
@@ -276,6 +279,13 @@
   </section>
 
 
+  <!-- Affiché à la place des mesures quand il n'y a rien sur la période choisie -->
+  <section class="carte vide" id="vide" hidden>
+    <h2 id="vide-titre">Aucune mesure sur cette période</h2>
+    <p id="vide-texte"></p>
+  </section>
+
+  <div id="contenu">
   <h2 class="rubrique">En ce moment</h2>
 
   <section class="carte" id="qualite" hidden>
@@ -324,6 +334,7 @@
       <h2>CO₂ <span>ppm</span></h2>
       <div class="graphe"><canvas id="graphe-co2"></canvas></div>
     </section>
+  </div>
   </div>
 </main>
 
@@ -733,18 +744,45 @@ function afficher(points) {
   return Math.max(...GRAPHES.map(g => dessiner(g, points)));   // nombre de trous repérés
 }
 
+// "les 6 dernières heures", "les 7 derniers jours"…
+const PERIODE_TEXTE = per => ({
+  "-6h": "les 6 dernières heures", "-24h": "les dernières 24 heures",
+  "-7d": "les 7 derniers jours", "-30d": "le dernier mois",
+})[per] || "la période choisie";
+
+// Quand la période est vide : date de la dernière mesure reçue (sur 31 jours au plus)
+async function afficherDerniereReception(num) {
+  const el = document.getElementById("vide-texte");
+  try {
+    const pts = await chargerMesures({ start: "-31d", freq: "1h" });
+    if (num !== requete) return;
+    el.textContent = pts.length
+      ? "Dernière mesure reçue le " + new Date(pts[pts.length - 1].time).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" })
+        + ". Choisis une période plus longue pour la voir."
+      : "Aucune mesure reçue depuis plus d'un mois.";
+  } catch (e) { /* pas grave : on laisse juste le titre */ }
+}
+
 async function rafraichir() {
   const num = ++requete;
   FEN = fenetre();
   try {
     let points = await chargerMesures(FEN);
     if (num !== requete) return;                 // une requête plus récente a pris le relais
-    if (periodeCourante === "libre")
-      points = points.filter(p => { const t = new Date(p.time).getTime(); return t >= FEN.debut && t <= FEN.fin; });
+    // On ne garde que les mesures de la fenêtre affichée (6 h, 24 h, 7 jours, 1 mois ou période libre)
+    points = points.filter(p => { const t = new Date(p.time).getTime(); return t >= FEN.debut && t <= FEN.fin; });
+    const contenu = document.getElementById("contenu"), vide = document.getElementById("vide");
     if (points.length === 0) {
-      console.warn("Aucune mesure sur cette période");   // message visible seulement dans la console (F12)
+      dernierPoints = [];                         // rien à exporter
+      contenu.hidden = true;                      // on cache les anciennes valeurs et courbes
+      vide.hidden = false;
+      document.getElementById("vide-titre").textContent = "Aucune mesure sur " + PERIODE_TEXTE(periodeCourante);
+      document.getElementById("vide-texte").textContent = "";
+      afficherDerniereReception(num);
       return;
     }
+    vide.hidden = true;
+    contenu.hidden = false;                       // visible AVANT de dessiner (sinon les graphes ont une taille nulle)
     dernierPoints = points;
     afficher(points);
   } catch (erreur) {
