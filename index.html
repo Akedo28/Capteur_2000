@@ -9,9 +9,6 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <!-- Chart.js : la bibliothèque qui dessine les graphes, chargée depuis un CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<!-- Leaflet : la carte géographique -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
   :root {
@@ -77,6 +74,14 @@
     border-radius: 999px; padding: 6px 14px; cursor: pointer;
   }
   .periodes button:hover { color: var(--texte); }
+  header .reglages { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .freq { display: flex; align-items: center; gap: 8px; color: var(--doux); font-size: 0.9rem; }
+  .freq select {
+    font: inherit; font-size: 0.9rem; color: var(--texte); background: var(--carte);
+    border: 1px solid var(--bord); border-radius: 999px; padding: 6px 12px; cursor: pointer;
+  }
+  .freq select:hover { border-color: var(--accent); }
+  .freq select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .periodes button[aria-pressed="true"] { background: var(--accent-fond); color: var(--accent); font-weight: 700; }
 
   /* ---------- Outils : période libre, export, thème ---------- */
@@ -115,6 +120,8 @@
   #pastille { width: 14px; height: 14px; margin-top: 7px; border-radius: 50%; background: var(--doux); flex: none; }
   #qualite-texte { font-size: 1.15rem; font-weight: 700; }
   #qualite small { display: block; color: var(--doux); font-size: 0.8rem; }
+  #qualite small a { color: var(--accent); text-underline-offset: 2px; }
+  #qualite small a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
   #puces { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 6px 0 2px; font-size: 0.85rem; }
   .puce { display: inline-flex; align-items: center; gap: 6px; }
   .puce i { width: 9px; height: 9px; border-radius: 50%; }
@@ -129,20 +136,6 @@
     font-size: 0.75rem; color: var(--doux); font-variant-numeric: tabular-nums;
   }
 
-  /* ---------- Carte géographique ---------- */
-  .toggle {
-    position: absolute; top: 14px; right: 14px; width: 30px; height: 30px; border-radius: 50%;
-    font: inherit; font-size: 1.2rem; line-height: 1; color: var(--texte);
-    background: var(--carte); border: 1px solid var(--bord); cursor: pointer;
-  }
-  .toggle:hover { border-color: var(--accent); color: var(--accent); }
-  .toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .pliable h2 { cursor: pointer; padding-right: 44px; }
-  .pliable.replie { padding-top: 14px; padding-bottom: 14px; background: var(--accent-fond); }   /* réduite : une simple bande */
-  .pliable.replie h2 { margin-bottom: 0; }
-  .pliable.replie .toggle { top: 11px; }
-  .pliable.replie .corps { display: none; }
-  #carte-leaflet { height: 320px; border-radius: 8px; isolation: isolate; }
   .note { margin: 8px 0 0; font-size: 0.8rem; color: var(--doux); }
 
   /* ---------- Graphes ---------- */
@@ -159,26 +152,7 @@
   .onglets a { color: var(--doux); text-decoration: none; border-radius: 999px; padding: 6px 16px; font-size: 0.95rem; }
   .onglets a:hover { color: var(--texte); }
   .onglets a[aria-current="page"] { background: var(--accent-fond); color: var(--accent); font-weight: 700; }
-  .onglets a:focus-visible, .marque:focus-visible, .choix:focus-visible, .projet a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-  /* ---------- Accueil ---------- */
-  .hero { padding: 16px 0 8px; }
-  .surtitre { margin: 0 0 10px; color: var(--accent); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; }
-  .hero h1 { font-size: 3.4rem; max-width: 16ch; }
-  .intro { max-width: 62ch; margin: 16px 0 0; font-size: 1.1rem; color: var(--doux); }
-  .choix-grille { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 36px 0 16px; }
-  .choix {
-    display: flex; flex-direction: column; gap: 8px; min-height: 230px; padding: 24px;
-    background: var(--carte); border: 1px solid var(--bord); border-radius: 16px;
-    color: var(--texte); text-decoration: none; transition: border-color 0.15s, transform 0.15s;
-  }
-  .choix:hover { border-color: var(--accent); transform: translateY(-2px); }
-  .choix .icone { font-size: 2rem; line-height: 1; }
-  .choix h2 { margin: 10px 0 0; font-size: 1.5rem; }
-  .choix p { margin: 0; color: var(--doux); }
-  .choix .aller { margin-top: auto; padding-top: 12px; color: var(--accent); font-weight: 700; }
-  .direct { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 0.9rem; }
-  .direct i { width: 10px; height: 10px; border-radius: 50%; background: var(--doux); flex: none; }
+  .onglets a:focus-visible, .marque:focus-visible, .projet a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   /* ---------- Page projet ---------- */
   .projet header { display: block; }
@@ -197,12 +171,10 @@
   .led b { min-width: 9.5rem; }
   .led .clignote { animation: clignote 1.2s steps(1) infinite; }
   @keyframes clignote { 50% { opacity: 0.15; } }
-  @media (prefers-reduced-motion: reduce) { .led .clignote { animation: none; } .choix { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .led .clignote { animation: none; } }
 
   @media (max-width: 760px) {
     .logo img { height: 48px; }
-    .choix-grille { grid-template-columns: 1fr; }
-    .hero h1 { font-size: 2.4rem; }
     .led { align-items: flex-start; flex-wrap: wrap; }
     .duo { grid-template-columns: 1fr; }
     h1 { font-size: 2.1rem; }
@@ -214,16 +186,14 @@
 <div class="page">
 
 <nav class="nav" aria-label="Navigation principale">
-  <a class="marque" href="#accueil"><i></i><span id="nom-projet"></span></a>
+  <a class="marque" href="#mesures"><i></i><span id="nom-projet"></span></a>
   <div class="onglets">
-    <a href="#accueil" data-vue="accueil">Accueil</a>
     <a href="#mesures" data-vue="mesures">Mesures</a>
     <a href="#projet" data-vue="projet">Le projet</a>
   </div>
 </nav>
 
-<!-- Ces deux pages sont remplies à partir de CONFIG (voir le premier <script>) -->
-<section id="vue-accueil" hidden></section>
+<!-- La page « Le projet » est remplie à partir de CONFIG (voir le premier <script>) -->
 <section id="vue-projet" class="projet" hidden></section>
 
 <main id="vue-mesures" hidden>
@@ -232,11 +202,25 @@
       <h1>Capteur de qualité de l'air</h1>
       <p>Mesures envoyées par la carte du groupe au serveur AirCarto.</p>
     </div>
+    <div class="reglages">
     <div class="periodes" id="periodes" role="group" aria-label="Période affichée">
       <button type="button" data-periode="-6h" aria-pressed="false">6 h</button>
       <button type="button" data-periode="-24h" aria-pressed="true">24 h</button>
       <button type="button" data-periode="-7d" aria-pressed="false">7 jours</button>
       <button type="button" data-periode="-30d" aria-pressed="false">1 mois</button>
+    </div>
+    <label class="freq">Moyenne sur
+      <select id="freq" title="Intervalle sur lequel les mesures sont moyennées">
+        <option value="auto">Auto</option>
+        <option value="1m">1 min</option>
+        <option value="2m">2 min</option>
+        <option value="5m">5 min</option>
+        <option value="10m">10 min</option>
+        <option value="30m">30 min</option>
+        <option value="1h">1 h</option>
+        <option value="6h">6 h</option>
+      </select>
+    </label>
     </div>
   </header>
 
@@ -260,7 +244,7 @@
       <div>
         <div id="qualite-texte"></div>
         <div id="puces"></div>
-        <small>Niveau le plus élevé parmi PM1, PM2.5 et PM10 (seuils ATMO)</small>
+        <small>Niveau le plus élevé parmi PM1, PM2.5 et PM10 (<a href="https://www.atmo-france.org/article/lindice-atmo" target="_blank" rel="noopener" title="L'indice ATMO expliqué par Atmo France, avec le tableau des seuils">seuils ATMO</a>)</small>
       </div>
     </div>
     <div class="valeurs" id="valeurs"></div>
@@ -296,15 +280,6 @@
     <h2>CO₂ <span>ppm</span></h2>
     <div class="graphe"><canvas id="graphe-co2"></canvas></div>
   </section>
-
-  <section class="carte pliable" id="carte-geo">
-    <button type="button" class="toggle" id="toggle-carte" aria-expanded="true" aria-controls="corps-carte" title="Réduire">−</button>
-    <h2>Position <span>et qualité de l'air</span></h2>
-    <div class="corps" id="corps-carte">
-      <div id="carte-leaflet"></div>
-      <p class="note" id="note-carte"></p>
-    </div>
-  </section>
 </main>
 
 </div>
@@ -320,26 +295,12 @@
 
 <script>
 // =====================================================================
-//  PERSONNALISATION : tout le texte de l'accueil et de la page « Le projet »
+//  PERSONNALISATION : tout le texte de la page « Le projet »
 //  se modifie ici. Le texte accepte du HTML simple (<b>, <a href="…">, <br>).
 // =====================================================================
 const CONFIG = {
   nomCourt: "NebuleAir · BUT3 Mesures Physiques",   // en haut à gauche et dans l'onglet du navigateur
-  pageDeDepart: "accueil",                          // "accueil", "mesures" ou "projet"
-
-  accueil: {
-    surtitre: "Projet de BUT3 Mesures Physiques · IUT d'Aix-Marseille",
-    titre: "La qualité de l'air, mesurée par notre station",
-    intro: "Une carte ESP32 NebuleAir mesure les particules fines (capteur NextPM), la température, "
-         + "l'humidité et la pression (BME280), puis envoie ses mesures au serveur AirCarto toutes les 30 secondes.",
-    afficherDirect: true,   // affiche la qualité de l'air actuelle sur la tuile « Mesures »
-    tuiles: {
-      mesures: { icone: "📈", titre: "Lire les mesures",
-                 texte: "Valeurs en direct, courbes, moyennes, carte et export CSV." },
-      projet:  { icone: "🛠️", titre: "Découvrir le projet",
-                 texte: "Objectifs, matériel, fonctionnement de la station et équipe." },
-    },
-  },
+  pageDeDepart: "mesures",                          // "mesures" ou "projet"
 
   projet: {
     titre: "Le projet",
@@ -349,7 +310,7 @@ const CONFIG = {
         "Lire les capteurs : particules PM1, PM2.5, PM10 (NextPM) ; température, humidité, pression (BME280)",
         "Afficher le niveau de pollution sur les LED du boîtier",
         "Se connecter au Wi-Fi et envoyer les mesures en HTTP au serveur AirCarto",
-        "Consulter les données sur cette interface : courbes, moyennes, carte",
+        "Consulter les données sur cette interface : courbes, moyennes, export CSV",
         "Concevoir un boîtier étanche qui laisse passer l'air",
       ]},
       { titre: "Matériel", liste: [
@@ -441,7 +402,8 @@ const NIVEAUX = [
 
 const graphes = {};          // les graphes déjà dessinés, à remplacer au rechargement
 let periodeCourante = "-24h";        // "-6h", "-24h", "-7d", "-30d" ou "libre"
-let FEN, dernierPoints = [], plageLibre = null, laCarte = null, couchePoints = null, recadrer = true, requete = 0;
+let FEN, dernierPoints = [], plageLibre = null, requete = 0;
+let freqChoisie = "auto";          // fréquence de moyenne choisie, ou "auto"
 
 const css = nom => getComputedStyle(document.documentElement).getPropertyValue(nom).trim();
 const aValeur = (p, c) => typeof p[c] === "number";
@@ -627,7 +589,8 @@ function afficherDerniere(points) {
   bloc.hidden = false;
 }
 
-// Moyenne de chaque champ sur la période + heure du plus haut (▲) et du plus bas (▼)
+// Moyenne de chaque champ sur la période + valeur la plus haute (▲) et la plus basse (▼)
+// (l'heure de chaque extrême s'affiche au survol)
 function afficherMoyenne(points) {
   document.getElementById("titre-moyenne").textContent = "sur " + FEN.libelle;
   document.getElementById("moyennes").innerHTML = Object.keys(CHAMPS).map(c => {
@@ -637,9 +600,9 @@ function afficherMoyenne(points) {
     const haut = v.reduce((a, p) => p[c] > a[c] ? p : a);
     const bas = v.reduce((a, p) => p[c] < a[c] ? p : a);
     const u = CHAMPS[c][1];
-    const extra = `<span class="extremes" title="Plus haut : ${formater(c, haut[c])} ${u} / Plus bas : ${formater(c, bas[c])} ${u}">`
-      + `<span aria-label="Heure du plus haut">▲ ${heure(haut.time, periodeCourante)}</span>`
-      + `<span aria-label="Heure du plus bas">▼ ${heure(bas.time, periodeCourante)}</span></span>`;
+    const extra = `<span class="extremes" title="Plus haut le ${heure(haut.time)} / plus bas le ${heure(bas.time)}">`
+      + `<span aria-label="Valeur la plus haute">▲ ${formater(c, haut[c])} ${u}</span>`
+      + `<span aria-label="Valeur la plus basse">▼ ${formater(c, bas[c])} ${u}</span></span>`;
     return tuile(c, moy, extra);
   }).join("");
 }
@@ -658,6 +621,7 @@ function fenetre() {
     fin = Date.now(); debut = fin - ms(periodeCourante);
     start = periodeCourante; freq = MOYENNE[periodeCourante]; libelle = LIBELLE[periodeCourante];
   }
+  if (freqChoisie !== "auto") freq = freqChoisie;   // fréquence imposée par le menu « Moyenne sur »
   const span = fin - debut, jour = 864e5;
   const pasAxe = [5, 10, 15, 30, 60, 120, 180, 240, 360, 720, 1440, 2880, 7200, 14400]
     .map(m => m * 60e3).find(n => span / n <= 8) || 14400 * 60e3;
@@ -676,45 +640,6 @@ function depuis(t) {
   return m < 60 ? `${m} min` : m < 1440 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}` : `${Math.floor(m / 1440)} j`;
 }
 
-// ---------- Carte géographique ----------
-const CHAMP_GPS = { lat: "lat", lon: "lon" };   // noms des champs de position dans l'API, si la carte a un GPS
-const POSITION_FIXE = [43.3335, 5.4050];        // sinon : position fixe de la carte (à remplacer par la vraie)
-
-const niveauPoint = p => {
-  const n = Object.keys(SEUILS).filter(c => aValeur(p, c)).map(c => niveau(c, p[c]));
-  return n.length ? Math.max(...n) : null;
-};
-
-function dessinerCarte(points) {
-  const bloc = document.getElementById("carte-geo");
-  if (typeof L === "undefined") { bloc.hidden = true; return; }   // Leaflet n'a pas pu se charger
-  if (!laCarte) {
-    laCarte = L.map("carte-leaflet").setView(POSITION_FIXE, 15);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(laCarte);
-    couchePoints = L.layerGroup().addTo(laCarte);
-  }
-  couchePoints.clearLayers();
-  const gps = points.filter(p => aValeur(p, CHAMP_GPS.lat) && aValeur(p, CHAMP_GPS.lon));
-  const saut = Math.ceil(gps.length / 400);                    // au plus ~400 points sur la carte
-  const liste = gps.length ? gps.filter((_, i) => i % saut === 0 || i === gps.length - 1) : [points[points.length - 1]];
-  const coords = liste.map(p => gps.length ? [p[CHAMP_GPS.lat], p[CHAMP_GPS.lon]] : POSITION_FIXE);
-  liste.forEach((p, i) => {
-    const n = niveauPoint(p);
-    const infos = ["pm1", "pm25", "pm10"].filter(c => aValeur(p, c)).map(c => `${CHAMPS[c][0]} : ${formater(c, p[c])} µg/m³`).join("<br>");
-    L.circleMarker(coords[i], { radius: gps.length ? 6 : 10, color: "#fff", weight: 2, fillOpacity: 0.95, fillColor: n === null ? "#888" : NIVEAUX[n][1] })
-      .bindPopup(`<b>${heure(p.time)}</b><br>${n === null ? "" : NIVEAUX[n][0] + "<br>"}${infos}`).addTo(couchePoints);
-  });
-  if (gps.length > 1) L.polyline(coords, { color: "#5b6b77", weight: 2, opacity: 0.6 }).addTo(couchePoints);
-  laCarte.invalidateSize();
-  if (recadrer && document.getElementById("carte-leaflet").offsetWidth > 0) {                                              // on ne recadre pas à chaque rafraîchissement (zoom de l'utilisateur)
-    coords.length > 1 ? laCarte.fitBounds(coords, { padding: [30, 30], maxZoom: 17 }) : laCarte.setView(coords[0], 15);
-    recadrer = false;
-  }
-  document.getElementById("note-carte").textContent = gps.length
-    ? "Chaque point est coloré selon la qualité de l'air (le pire des trois PM)."
-    : "Position fixe (réglage POSITION_FIXE) : le point est coloré selon la dernière mesure.";
-}
-
 // ---------- Export ----------
 function telecharger(blob, nom) {
   const a = document.createElement("a");
@@ -723,8 +648,7 @@ function telecharger(blob, nom) {
 }
 function exporterCsv() {
   const champs = Object.keys(CHAMPS);
-  const gps = dernierPoints.some(p => aValeur(p, CHAMP_GPS.lat));
-  const noms = ["time", ...champs, ...(gps ? [CHAMP_GPS.lat, CHAMP_GPS.lon] : [])];
+  const noms = ["time", ...champs];
   const lignes = [noms.join(";")];
   for (const p of dernierPoints)
     lignes.push(noms.map(c => c === "time" ? p.time : aValeur(p, c) ? String(p[c]).replace(".", ",") : "").join(";"));
@@ -751,7 +675,6 @@ document.getElementById("csv").addEventListener("click", exporterCsv);
 function afficher(points) {
   afficherDerniere(points);
   afficherMoyenne(points);
-  dessinerCarte(points);
   return Math.max(...GRAPHES.map(g => dessiner(g, points)));   // nombre de trous repérés
 }
 
@@ -792,14 +715,35 @@ async function rafraichir() {
   }
 }
 
+// ---------- Menu « Moyenne sur » ----------
+// Au-delà de MAX_POINTS points par courbe, la page deviendrait lente :
+// les moyennes trop fines pour la période choisie sont grisées.
+const MAX_POINTS = 5000;
+const AUTO = { "-6h": "1 min", "-24h": "2 min", "-7d": "1 h", "-30d": "1 h" };
+const menuFreq = document.getElementById("freq");
+function majMenuFreq() {
+  const duree = periodeCourante === "libre" ? Date.now() - plageLibre.debut : ms(periodeCourante);
+  for (const o of menuFreq.options) {
+    if (o.value === "auto") {
+      o.textContent = periodeCourante === "libre" ? "Auto" : `Auto (${AUTO[periodeCourante]})`;
+      continue;
+    }
+    o.disabled = duree / ms(o.value) > MAX_POINTS;
+  }
+  if (menuFreq.selectedOptions[0].disabled) { menuFreq.value = "auto"; freqChoisie = "auto"; }
+}
+menuFreq.addEventListener("change", () => { freqChoisie = menuFreq.value; rafraichir(); });
+majMenuFreq();
+
 // ---------- Boutons ----------
 const boutonsPeriode = () => document.querySelectorAll("#periodes button");
 document.getElementById("periodes").addEventListener("click", e => {
   const bouton = e.target.closest("button");
   if (!bouton) return;
-  periodeCourante = bouton.dataset.periode; recadrer = true;
+  periodeCourante = bouton.dataset.periode;
   boutonsPeriode().forEach(b => b.setAttribute("aria-pressed", b === bouton));
   document.getElementById("appliquer").setAttribute("aria-pressed", "false");
+  majMenuFreq();
   rafraichir();
 });
 
@@ -815,9 +759,10 @@ document.getElementById("appliquer").addEventListener("click", () => {
   const erreur = isNaN(debut) || isNaN(fin) || debut >= fin ? "choisis une date de début avant la date de fin."
                : Date.now() - debut > 90 * 864e5 ? "90 jours en arrière au maximum." : "";
   if (erreur) { etat.className = "erreur"; etat.textContent = "Période libre : " + erreur; return; }
-  plageLibre = { debut, fin }; periodeCourante = "libre"; recadrer = true;
+  plageLibre = { debut, fin }; periodeCourante = "libre";
   boutonsPeriode().forEach(b => b.setAttribute("aria-pressed", "false"));
   document.getElementById("appliquer").setAttribute("aria-pressed", "true");
+  majMenuFreq();
   rafraichir();
 });
 
@@ -834,47 +779,7 @@ document.getElementById("theme").addEventListener("click", () => {
 });
 majBoutonTheme();
 
-// Carte réductible : "−" la réduit à une bande avec son titre, "+" la rouvre
-const sectionCarte = document.getElementById("carte-geo"), boutonCarte = document.getElementById("toggle-carte");
-function basculerCarte() {
-  const replie = sectionCarte.classList.toggle("replie");
-  boutonCarte.textContent = replie ? "+" : "−";
-  boutonCarte.title = replie ? "Agrandir" : "Réduire";
-  boutonCarte.setAttribute("aria-expanded", String(!replie));
-  if (!replie && dernierPoints.length) dessinerCarte(dernierPoints);   // Leaflet doit recalculer sa taille
-}
-boutonCarte.addEventListener("click", basculerCarte);
-sectionCarte.querySelector("h2").addEventListener("click", basculerCarte);
-
-// ---------- Accueil et page projet (construites depuis CONFIG) ----------
-function construireAccueil() {
-  const a = CONFIG.accueil;
-  const tuileChoix = (vue, t, extra = "") =>
-    `<a class="choix" href="#${vue}"><span class="icone" aria-hidden="true">${t.icone}</span>`
-    + `<h2>${t.titre}</h2><p>${t.texte}</p>${extra}<span class="aller">Ouvrir →</span></a>`;
-  const direct = a.afficherDirect ? `<span class="direct" id="direct"><i></i>Chargement de la dernière mesure…</span>` : "";
-  document.getElementById("vue-accueil").innerHTML =
-      `<div class="hero"><p class="surtitre">${a.surtitre}</p><h1>${a.titre}</h1><p class="intro">${a.intro}</p></div>`
-    + `<div class="choix-grille">${tuileChoix("mesures", a.tuiles.mesures, direct)}${tuileChoix("projet", a.tuiles.projet)}</div>`;
-}
-
-// Qualité de l'air actuelle, affichée sur la tuile « Mesures » de l'accueil
-async function majDirect() {
-  const el = document.getElementById("direct");
-  if (!el) return;
-  const texte = t => { el.lastChild.textContent = t; };
-  try {
-    const points = await chargerMesures({ start: "-1h", freq: "1m" });
-    if (points.length === 0) return texte("Aucune mesure depuis 1 h");
-    const d = points[points.length - 1], n = niveauPoint(d);
-    const age = depuis(Date.now() - new Date(d.time).getTime());
-    el.querySelector("i").style.background = n === null ? "" : NIVEAUX[n][1];
-    texte(n === null ? `Dernière mesure il y a ${age}` : `Qualité de l'air : ${NIVEAUX[n][0]} · il y a ${age}`);
-  } catch (e) {
-    texte("Mesures indisponibles pour le moment");
-  }
-}
-
+// ---------- Page projet (construite depuis CONFIG) ----------
 function construireProjet() {
   const p = CONFIG.projet;
   const sections = p.sections.map(s => `<section class="carte prose"><h2>${s.titre}</h2>`
@@ -891,12 +796,12 @@ function construireProjet() {
     `<header><div><h1>${p.titre}</h1><p>${p.intro}</p></div></header>${sections}${leds}${equipe}${liens}`;
 }
 
-// ---------- Navigation : #accueil, #mesures, #projet ----------
-const VUES = { accueil: "Accueil", mesures: "Mesures", projet: "Le projet" };
+// ---------- Navigation : #mesures, #projet ----------
+const VUES = { mesures: "Mesures", projet: "Le projet" };
 let vueCourante = null;
 function afficherVue() {
   const demandee = location.hash.slice(1);
-  const vue = demandee in VUES ? demandee : (CONFIG.pageDeDepart in VUES ? CONFIG.pageDeDepart : "accueil");
+  const vue = demandee in VUES ? demandee : (CONFIG.pageDeDepart in VUES ? CONFIG.pageDeDepart : "mesures");
   for (const v in VUES) document.getElementById("vue-" + v).hidden = v !== vue;
   document.querySelectorAll(".onglets a").forEach(a =>
     a.dataset.vue === vue ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
@@ -904,14 +809,12 @@ function afficherVue() {
   if (vue === vueCourante) return;
   vueCourante = vue;
   window.scrollTo(0, 0);
-  // Les graphes et la carte se dessinent seulement quand la page Mesures est visible
+  // Les graphes se dessinent seulement quand la page Mesures est visible
   // (un canvas caché a une taille nulle).
-  if (vue === "mesures") { recadrer = true; rafraichir(); }
-  if (vue === "accueil") majDirect();
+  if (vue === "mesures") rafraichir();
 }
 
 document.getElementById("nom-projet").textContent = CONFIG.nomCourt;
-construireAccueil();
 construireProjet();
 window.addEventListener("hashchange", afficherVue);
 afficherVue();
@@ -920,7 +823,6 @@ afficherVue();
 setInterval(() => {
   if (document.hidden) return;
   if (vueCourante === "mesures") rafraichir();
-  else if (vueCourante === "accueil") majDirect();
 }, 2 * 60 * 1000);
 document.addEventListener("visibilitychange", () => {   // retour sur l'onglet : données à jour tout de suite
   if (!document.hidden && vueCourante === "mesures") rafraichir();
