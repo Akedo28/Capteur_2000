@@ -281,7 +281,7 @@
     </div>
   </section>
 
-  <p id="etat" role="status">Chargement…</p>
+  <p id="etat" role="status" hidden></p>   <!-- visible seulement en cas d'erreur -->
 
   <h2 class="rubrique">En ce moment</h2>
 
@@ -751,28 +751,17 @@ async function rafraichir() {
     if (periodeCourante === "libre")
       points = points.filter(p => { const t = new Date(p.time).getTime(); return t >= FEN.debut && t <= FEN.fin; });
     if (points.length === 0) {
+      etat.hidden = false;
       etat.className = "erreur";
       etat.textContent = periodeCourante === "libre" ? "Aucune mesure sur la période choisie."
                                                     : "Aucune mesure sur cette période : la carte envoie-t-elle ?";
       return;
     }
     dernierPoints = points;
-    const nb = afficher(points);
-
-    // Carte hors ligne ? (seulement pour les périodes qui vont jusqu'à maintenant)
-    const dernier = new Date(points[points.length - 1].time).getTime();
-    const age = Date.now() - dernier, seuil = Math.max(10 * 60e3, 2 * ms(FEN.freq));
-    let classe = "ok", texte = `${points.length} points, moyenne sur ${FEN.freq}. Dernière mesure : ${new Date(dernier).toLocaleString("fr-FR")}`;
-    if (periodeCourante !== "libre") {
-      if (age > seuil) {
-        classe = age > 6 * seuil ? "erreur" : "attention";
-        texte = `Carte peut-être hors ligne : aucune mesure depuis ${depuis(age)}. ` + texte;
-      } else texte += ` (il y a ${depuis(age)})`;
-    }
-    texte += "." + (nb ? ` ${nb} interruption${nb > 1 ? "s" : ""} de mesure (${LEGENDE_TROUS[STYLE_TROUS]}).` : "");
-    etat.className = classe;
-    etat.textContent = texte;
+    afficher(points);
+    etat.hidden = true;                          // tout va bien : pas de ligne d'état
   } catch (erreur) {
+    etat.hidden = false;
     etat.className = "erreur";
     etat.textContent = "Erreur : " + erreur.message;
   }
@@ -830,7 +819,7 @@ document.getElementById("appliquer").addEventListener("click", () => {
   const fin = Math.min(new Date(document.getElementById("fin").value).getTime(), Date.now());
   const erreur = isNaN(debut) || isNaN(fin) || debut >= fin ? "choisis une date de début avant la date de fin."
                : Date.now() - debut > 90 * 864e5 ? "90 jours en arrière au maximum." : "";
-  if (erreur) { etat.className = "erreur"; etat.textContent = "Période libre : " + erreur; return; }
+  if (erreur) { etat.hidden = false; etat.className = "erreur"; etat.textContent = "Période libre : " + erreur; return; }
   plageLibre = { debut, fin }; periodeCourante = "libre";
   boutonsPeriode().forEach(b => b.setAttribute("aria-pressed", "false"));
   document.getElementById("appliquer").setAttribute("aria-pressed", "true");
